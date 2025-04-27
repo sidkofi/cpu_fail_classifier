@@ -26,8 +26,7 @@ fprintf('--- CPU Failure Classification Script ---\n');
 try
     % Load data into table and cell array
     [data, run_data_cell_optional] = load_benchmark_data('benchmark_data.csv');
-    % For this script structure, we primarily use the 'data' table
-    num_total_runs = max(data.Run_ID); % Get total number of runs
+    num_total_runs = max(data.Run_ID);
     fprintf('Loaded data for %d runs.\n', num_total_runs);
 catch ME
     error('Failed to load benchmark data. Ensure benchmark_data.csv exists and load_benchmark_data.m is accessible. Error: %s', ME.message);
@@ -36,7 +35,7 @@ end
 %% 2. Define Parameters
 
 % --- Preprocessing Parameters ---
-Fs = 10;            % Sampling frequency (Hz) - MUST match data generation
+Fs = 10;            % dont change this
 ma_window = 3;      % Moving average window size
 butter_order = 2;   % Butterworth filter order
 butter_cutoff = 3.0;% Butterworth cutoff frequency (Hz)
@@ -48,7 +47,7 @@ detail_level = 1;   % Focus feature extraction on Detail Level 1
 
 % --- Feature Extraction Parameters ---
 % For Significant Peak Count (Feature 1)
-peak_height_factor_sig = 1.5; % MinPeakHeight = factor * std(abs(D1)) - Adjusted based on project evolution
+peak_height_factor_sig = 1.5; % MinPeakHeight = factor * std(abs(D1))
 peak_dist_sec_sig = 0.2;      % MinPeakDistance in seconds for counting peaks
 
 % For Magnitude Ratio (Feature 2) - Window around peaks to exclude from 'rest' average
@@ -58,7 +57,7 @@ peak_exclude_window_samples = 5;
 min_dist_for_feature_sec = 3.0; % Min separation required (seconds)
 min_peak_height_factor_for_dist = 1.5; % Factor for finding candidate peaks for distance
 
-% --- Classification Thresholds (FINAL - based on user tuning) ---
+% --- Classification Thresholds (feel free to play around with these to try and get a higher accuracy) ---
 threshold_mad_max_for_none = 0.0006;
 threshold_pk_count_min_for_none = 40; % Condition used alongside MAD for 'None'
 threshold_freq_osc_min_peak_count = 6;
@@ -97,7 +96,7 @@ for i = 1:num_total_runs % Loop through each Run ID
         continue;
     end
 
-    % Get true label (use first entry for the run)
+    % Get true label
     true_failure_types{i} = char(run_subset.Failure_Type(1));
 
     % Extract time and frequency data for this run
@@ -210,11 +209,6 @@ for i = 1:num_total_runs % Loop through each Run ID
         predicted_failure_types{i} = 'Stuck_Frequency';
     end
 
-    % Optional: Progress update
-    if mod(i, 100) == 0
-        fprintf('  Processed run %d/%d\n', i, num_total_runs);
-    end
-
 end % End of loop through runs
 toc; % Stop timer
 fprintf('Feature extraction and classification complete.\n');
@@ -253,144 +247,5 @@ cm.Title = sprintf('CPU Failure Classification (Overall Acc: %.2f%%)', overall_a
 cm.ColumnSummary = 'column-normalized'; % Show precision
 cm.RowSummary = 'row-normalized';     % Show recall
 
-% Display text version (optional)
-% C = confusionmat(true_cat, pred_cat, 'Order', class_order);
-% fprintf('\nConfusion Matrix (Rows: True, Columns: Predicted):\n');
-% fprintf('Labels: %s\n', strjoin(class_order, ', '));
-% disp(C);
 
 fprintf('\n--- Classification Report Complete ---\n');
-
-%% 5. Optional Visualizations (Uncomment to Run)
-% These sections generate plots shown in the blog post/presentation.
-% They require the 'example_runs' struct to be defined, which maps
-% failure type names to specific Run IDs. You might need to run the
-% example selection code first if running this section independently.
-
-% --- Define Example Runs (Manually or using the provided code) ---
-% fprintf('\n--- Defining Example Runs for Visualization ---\n');
-% try
-%     failure_types_unique = categories(unique(categorical(true_labels_valid))); % Get unique valid types
-%     example_runs = struct();
-%     for i = 1:length(failure_types_unique)
-%         type = failure_types_unique{i};
-%         % Find the first valid run index corresponding to this type
-%         idx_in_valid = find(strcmp(true_labels_valid, type), 1);
-%         if ~isempty(idx_in_valid)
-%             original_run_indices = find(valid_indices); % Map valid index back to original run ID
-%             example_runs.(type) = original_run_indices(idx_in_valid);
-%             fprintf('Selected Run ID %d as example for %s\n', example_runs.(type), type);
-%         else
-%             warning('Could not find a valid example run for type: %s', type);
-%         end
-%     end
-% catch ME_example
-%     warning('Could not automatically define example runs. Error: %s', ME_example.message);
-%     disp('Define example_runs struct manually if needed for plots.');
-%     % Example manual definition:
-%     % example_runs.None = 14;
-%     % example_runs.Thermal_Throttling = 6;
-%     % example_runs.Frequency_Oscillation = 9;
-%     % example_runs.Stuck_Frequency = 1;
-% end
-%
-% % --- Plot Example Raw Signals ---
-% if exist('example_runs', 'var')
-%     fprintf('\n--- Plotting one example run per failure type (in separate figures) ---\n');
-%     failure_types_to_plot = fieldnames(example_runs)';
-%     num_types = length(failure_types_to_plot);
-%     for i = 1:num_types
-%         current_type_str = failure_types_to_plot{i};
-%         example_run_id = example_runs.(current_type_str);
-%         run_subset = data(data.Run_ID == example_run_id, :);
-%         if isempty(run_subset) || ~ismember('Time', run_subset.Properties.VariableNames) || ~ismember('Frequency_GHz', run_subset.Properties.VariableNames)
-%             warning('Example run %d (%s) invalid for plotting raw signal.', example_run_id, current_type_str); continue; end
-%         min_freq_run = min(run_subset.Frequency_GHz); max_freq_run = max(run_subset.Frequency_GHz);
-%         y_padding = (max_freq_run - min_freq_run) * 0.05; if y_padding == 0, y_padding = 0.1; end
-%         ylim_dynamic = [min_freq_run - y_padding, max_freq_run + y_padding];
-%         figure('Name', sprintf('Example Raw: %s', current_type_str), 'Position', [100 + (i-1)*40, 100 + (i-1)*40, 600, 400]);
-%         plot(run_subset.Time, run_subset.Frequency_GHz, 'LineWidth', 1.5); grid on; box on;
-%         ylim(ylim_dynamic); title(strrep(current_type_str,'_',' '), 'FontSize', 12);
-%         xlabel('Time (s)', 'FontSize', 10); ylabel('Frequency (GHz)', 'FontSize', 10); set(gca, 'FontSize', 10);
-%         fprintf('Plotted raw example for %s (Run ID: %d).\n', current_type_str, example_run_id);
-%     end
-% end
-%
-% % --- Plot Filter Responses ---
-% fprintf('\n--- Plotting Filter Responses ---\n');
-% % Moving Average
-% figure('Name','Filter Response: Moving Average'); clf;
-% ma_coeffs = ones(1, ma_window) / ma_window; [h_ma, w_ma] = freqz(ma_coeffs, 1, 1024); f_ma = w_ma/(2*pi) * Fs;
-% plot(f_ma, 20*log10(abs(h_ma)), 'LineWidth', 2); title('Frequency Response'); xlabel('Frequency (Hz)'); ylabel('Magnitude (dB)'); grid on; box on; xlim([0, Fs/2]); ylim([-30, 5]);
-% ma_params_str = sprintf('Window Size: %d', ma_window);
-% annotation('textbox', [0.75, 0.8, 0.1, 0.1], 'String', ma_params_str, 'EdgeColor', 'none', 'HorizontalAlignment', 'center', 'FitBoxToText', 'on');
-% % Butterworth
-% figure('Name','Filter Response: Butterworth'); clf;
-% [b, a] = butter(butter_order, butter_cutoff/(Fs/2)); [h_butter, w_butter] = freqz(b, a, 1024); f_butter = w_butter/(2*pi) * Fs;
-% plot(f_butter, 20*log10(abs(h_butter)), 'LineWidth', 2); title('Frequency Response'); xlabel('Frequency (Hz)'); ylabel('Magnitude (dB)'); grid on; box on; xlim([0, Fs/2]); ylim([-30, 5]);
-% butter_params_str = sprintf('Order: %d Cutoff: %.1f Hz', butter_order, butter_cutoff);
-% annotation('textbox', [0.75, 0.8, 0.1, 0.1], 'String', butter_params_str, 'EdgeColor', 'none', 'HorizontalAlignment', 'center', 'FitBoxToText', 'on');
-%
-% % --- Plot Wavelet Functions ---
-% fprintf('\n--- Plotting Wavelet Functions ---\n');
-% iterations = 8;
-% try
-%     [phi, psi, xval] = wavefun(wavelet_name, iterations);
-%     figure('Name', sprintf('%s Wavelet Functions', wavelet_name), 'Position', [100, 100, 600, 350]); clf;
-%     subplot(1, 2, 1); plot(xval, phi, 'LineWidth', 1.5); title('Scaling Function (\phi)'); xlabel('Time'); ylabel('Amplitude'); grid on; box on; axis tight;
-%     subplot(1, 2, 2); plot(xval, psi, 'LineWidth', 1.5); title('Wavelet Function (\psi)'); xlabel('Time'); ylabel('Amplitude'); grid on; box on; axis tight;
-%     sgtitle(sprintf('%s Wavelet', wavelet_name), 'FontSize', 12, 'FontWeight', 'bold');
-% catch ME_wavefun
-%     warning('Could not plot wavelet functions. Wavelet Toolbox installed? Error: %s', ME_wavefun.message);
-% end
-%
-% % --- Plot D1/D2 Reconstructions ---
-% if exist('example_runs', 'var')
-%     fprintf('\n--- Plotting D1 and D2 reconstructions ---\n');
-%     focus_levels_plot = [1, 2];
-%     for field_plot = fieldnames(example_runs)'
-%         type_plot = field_plot{1};
-%         idx_plot = example_runs.(type_plot);
-%         run_subset_plot = data(data.Run_ID == idx_plot, :);
-%         if isempty(run_subset_plot) || ~ismember('Time', run_subset_plot.Properties.VariableNames) || ~ismember('Frequency_GHz', run_subset_plot.Properties.VariableNames)
-%             warning('Run ID %d (%s) invalid for D1/D2 plot.', idx_plot, type_plot); continue; end
-%         time_data_plot = run_subset_plot.Time; raw_freq_data_plot = run_subset_plot.Frequency_GHz;
-%         if isempty(time_data_plot) || isempty(raw_freq_data_plot) || length(time_data_plot) ~= length(raw_freq_data_plot) || all(isnan(raw_freq_data_plot))
-%             warning('Invalid data for Run ID %d (%s) D1/D2 plot.', idx_plot, type_plot); continue; end
-%         freq_ma_plot = movmean(raw_freq_data_plot, ma_window, 'omitnan'); [b_filt_plot, a_filt_plot] = butter(butter_order, butter_cutoff/(Fs/2)); freq_data_plot = filtfilt(b_filt_plot, a_filt_plot, freq_ma_plot);
-%         [c_plot, l_plot] = wavedec(freq_data_plot, num_levels, wavelet_name);
-%         figure('Name', sprintf('%s - D1 vs D2', strrep(type_plot, '_', ' ')), 'Position', [100, 100, 900, 500]); clf;
-%         for i_plot = 1:length(focus_levels_plot)
-%             level_plot = focus_levels_plot(i_plot); subplot(2, 1, i_plot);
-%             detail_recon_plot = wrcoef('d', c_plot, l_plot, wavelet_name, level_plot);
-%             plot(time_data_plot, detail_recon_plot, 'LineWidth', 1.5);
-%             min_peak_h_plot = std(abs(detail_recon_plot)) * 1.5; [pks_plot, locs_plot] = findpeaks(abs(detail_recon_plot), 'MinPeakHeight', min_peak_h_plot); num_peaks_plot = length(pks_plot);
-%             if ~isempty(pks_plot) && ~isempty(locs_plot)
-%                 valid_locs_plot = locs_plot(locs_plot <= length(time_data_plot));
-%                 if ~isempty(valid_locs_plot), hold on; plot(time_data_plot(valid_locs_plot), detail_recon_plot(valid_locs_plot), 'ro', 'MarkerSize', 3, 'MarkerFaceColor', 'r'); hold off; end
-%             end
-%             freq_low_plot = (Fs / (2^(level_plot+1))); freq_high_plot = (Fs / (2^level_plot));
-%             title(sprintf('Detail Level %d Reconstruction (Approx. %.2f-%.2f Hz)', level_plot, freq_low_plot, freq_high_plot)); ylabel('Amplitude'); grid on; box on; xlim([time_data_plot(1), time_data_plot(end)]);
-%             peak_str_plot = sprintf('Peaks: %d', num_peaks_plot); text(0.98, 0.95, peak_str_plot, 'Units', 'normalized', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'top', 'FontSize', 9, 'BackgroundColor', 'w','EdgeColor','k','Margin', 1);
-%             if i_plot == length(focus_levels_plot), xlabel('Time (s)'); end
-%         end
-%         sgtitle(sprintf('Wavelet Detail Levels for %s (Run %d)', strrep(type_plot, '_', ' '), idx_plot), 'FontSize', 12, 'FontWeight', 'bold');
-%         fprintf('Plotted D1/D2 for %s (Run ID: %d)\n', type_plot, idx_plot);
-%     end
-% end
-%
-% % --- Plot Feature Visualizations ---
-% % (Include the individual feature visualization code blocks here if desired)
-% % e.g., run the code from immersive IDs:
-% % matlab_vis_pk_count
-% % matlab_vis_mag_ratio (Separated Peaks version)
-% % matlab_vis_sep_dist
-% % matlab_vis_mad
-% % Remember to ensure 'example_runs' is defined before running these.
-%
-% % --- Plot Classification Logic Stages ---
-% % (Include the code from immersive ID: matlab_class_logic_stages here if desired)
-% % Ensure thresholds are defined and data/labels are available.
-
-
-fprintf('\n--- Script Finished ---\n');

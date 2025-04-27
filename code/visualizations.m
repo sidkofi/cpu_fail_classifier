@@ -61,7 +61,7 @@ fprintf('\n--- Defining Example Runs for Visualization ---\n');
 example_runs = struct();
 try
     failure_types_unique = categories(unique(categorical(true_labels_valid))); % Get unique valid types
-    original_run_indices_map = find(valid_indices); % Map valid index back to original run ID
+    original_run_indices_map = find(valid_indices);
 
     for i = 1:length(failure_types_unique)
         type = failure_types_unique{i};
@@ -172,7 +172,7 @@ failure_types_to_plot_d1d2 = fieldnames(example_runs)';
 for i = 1:length(failure_types_to_plot_d1d2)
     type = failure_types_to_plot_d1d2{i};
     idx = example_runs.(type);
-    if idx == -1, continue; end % Skip if no example run
+    if idx == -1, continue; end
 
     run_subset = data(data.Run_ID == idx, :);
     if isempty(run_subset) || ~ismember('Time', run_subset.Properties.VariableNames) || ~ismember('Frequency_GHz', run_subset.Properties.VariableNames)
@@ -246,14 +246,14 @@ catch ME_vis, warning('Error generating Peak Count visualization: %s', ME_vis.me
 
 % --- 5b: Magnitude Ratio (Separated Peaks) ---
 try
-    example_type_ratio = 'Thermal_Throttling'; % Or 'Stuck_Frequency'
+    example_type_ratio = 'Thermal_Throttling';
     example_run_id_ratio = example_runs.(example_type_ratio);
      if example_run_id_ratio ~= -1
         run_subset = data(data.Run_ID == example_run_id_ratio, :); time_data = run_subset.Time; raw_freq_data = run_subset.Frequency_GHz; n_samples = length(time_data);
         freq_ma = movmean(raw_freq_data, ma_window, 'omitnan'); [b_filt, a_filt] = butter(butter_order, butter_cutoff/(Fs/2)); freq_data = filtfilt(b_filt, a_filt, freq_ma);
         [c, l] = wavedec(freq_data, num_levels, wavelet_name); detail_recon = wrcoef('d', c, l, wavelet_name, 1); abs_detail_recon = abs(detail_recon);
         mag_ratio_value = 0; avg_top_peak_mag = 0; avg_rest_mag = 0; pks_separated = []; locs_separated = [];
-        min_peak_h_ratio = min_peak_height_factor_for_dist * std(abs_detail_recon); % Use same factor as sep dist
+        min_peak_h_ratio = min_peak_height_factor_for_dist * std(abs_detail_recon);
         min_dist_samples_ratio = round(min_dist_for_feature_sec * Fs); if min_dist_samples_ratio < 1, min_dist_samples_ratio = 1; end
         [pks_all, locs_all] = findpeaks(abs_detail_recon, 'MinPeakHeight', min_peak_h_ratio, 'SortStr', 'descend');
         if ~isempty(pks_all)
@@ -368,9 +368,9 @@ try
     class_order = {'None', 'Frequency_Oscillation', 'Stuck_Frequency', 'Thermal_Throttling'};
     true_cat = categorical(true_labels_valid, class_order);
     pred_cat = categorical(predicted_labels_valid, class_order);
-    fig_cm = figure('Name', 'Confusion Matrix', 'Position', [100 100 550 450], 'Visible', 'off'); % Slightly adjusted size
+    fig_cm = figure('Name', 'Confusion Matrix', 'Position', [100 100 550 450], 'Visible', 'off');
     cm = confusionchart(true_cat, pred_cat);
-    overall_accuracy = sum(diag(cm.NormalizedValues)) / sum(cm.NormalizedValues(:)) * 100; % Recalculate accuracy for title
+    overall_accuracy = sum(diag(cm.NormalizedValues)) / sum(cm.NormalizedValues(:)) * 100;
     cm.Title = sprintf('CPU Failure Classification (Overall Acc: %.2f%%)', overall_accuracy);
     cm.ColumnSummary = 'column-normalized'; cm.RowSummary = 'row-normalized';
     filename_cm = fullfile(output_dir, 'confusion_matrix.png');
