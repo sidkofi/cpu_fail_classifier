@@ -216,8 +216,8 @@ This classification logic was tested on 1000 simulated runs (250 of each type). 
 
 All MATLAB code used for data generation, filtering, wavelet analysis, feature extraction, classification, and visualization, along with the generated benchmark data file, can be found in this GitHub repository:
 
-* **Code:** [`code/`](./code/) directory
-* **Data:** [`data/`](./data/) directory (`benchmark_data.csv`)
+* **Code:** [`code/`](https://github.com/sidkofi/cpu_fail_classifier/tree/main/code) directory
+* **Data:** [`data/`](https://github.com/sidkofi/cpu_fail_classifier/tree/main/data) directory (`benchmark_data.csv`)
 
 
 ---
