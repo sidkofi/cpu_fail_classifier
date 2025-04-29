@@ -206,8 +206,8 @@ This classification logic was tested on 1000 simulated runs (250 of each type). 
 **Limitations & Future Work:**
 
 * This analysis used **simulated data**. Validation on diverse real-world CPU telemetry is needed.
-* The thresholds were **tuned manually** based on observed distributions; automated optimization could be explored.
-* Only **frequency data** was used. Incorporating other metrics (temperature, voltage, utilization) could improve accuracy and potentially identify more failure types.
+* The thresholds were **tuned manually** based on observed distributions; automated optimization (random forest) could be explored.
+* Finding a way to remove false positives is imperative to a successful product: 11 total runs demonstrate missed fail.
 * Future work could involve **predicting the *time*** of failure onset or using these features as input to more complex **machine learning models**.
 
 ---
