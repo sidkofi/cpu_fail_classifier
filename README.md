@@ -218,6 +218,8 @@ All MATLAB code used for data generation, filtering, wavelet analysis, feature e
 
 * **Code:** [`code/`](https://github.com/sidkofi/cpu_fail_classifier/tree/main/code) directory
 * **Data:** [`data/`](https://github.com/sidkofi/cpu_fail_classifier/tree/main/data) directory (`benchmark_data.csv`)
+* **Slides:** [`slides/`](https://github.com/sidkofi/cpu_fail_classifier/tree/main/slides)
+
 
 
 ---
