@@ -6,9 +6,9 @@
 
 ## What's the Problem? Why Care About CPU Failures?
 
-Modern CPUs are incredibly complex pieces of engineering. Before they end up in computers, there is undergo rigorous testing under intense conditions (complex simulations, high-end gaming, video rendering) to ensure they perform reliably. Manufacturers collect vast amounts of data, including operating frequency, temperature, power usage, and more, during these tests.
+Modern CPUs are incredibly complex pieces of engineering. Before they end up in computers, they undergo rigorous testing under intense conditions (complex simulations, high-end gaming, video rendering) to ensure they perform reliably. Manufacturers collect vast amounts of data, including operating frequency, temperature, power usage, and more, during these tests.
 
-Most CPUs pass. But sometimes, they exhibit faulty behavior – maybe the frequency gets stuck, drops unexpectedly, or becomes unstable. Catching these failures *before* the CPU ships is crucial. It saves manufacturers money by preventing faulty products from reaching consumers, and it saves users the headache of dealing with an unreliable computer.
+Most CPUs pass. But sometimes, they exhibit faulty behavior – maybe the frequency gets stuck, drops unexpectedly, or becomes unstable. Catching these failures *before* the CPU ships is crucial. It saves manufacturers money by preventing faulty products from reaching consumers, and it saves us the headache of dealing with an unreliable computer.
 
 <img src="./images/data_privacy.png" width="500">
 
@@ -21,26 +21,26 @@ However, analyzing the raw data from these tests presents challenges:
 3.  **Subtlety:** Some failures might be transient or hidden within noisy data.
 4.  **Privacy:** Detailed performance data is often proprietary and not publicly shared, hindering broad research.
 
-Current methods can be slow or expensive, and sometimes failures slip through. Can signal processing techniques be used to automatically and efficiently classify different types of CPU failures based on their frequency behavior?
+Current methods can be slow or expensive, and sometimes failures slip through. Can we use signal processing techniques to automatically and efficiently classify different types of CPU failures based on their frequency behavior?
 
 ---
 
 ## The Approach: From Raw Signals to Failure Types
 
-The goal is to take the raw CPU frequency data over time (a time-domain signal) and classify it into one of several categories: "None" (healthy), "Thermal Throttling", "Stuck Frequency", or "Frequency Oscillation".
+My goal is to take the raw CPU frequency data over time (a time-domain signal) and classify it into one of several categories: "None" (healthy), "Thermal Throttling", "Stuck Frequency", or "Frequency Oscillation".
 
-To do this, a workflow was developed:
+To do this, I developed a plan that I thought would work pretty well:
 
 <img src="./images/flowchart.png" width="500">
 
 *The planned workflow for CPU failure classification, iteration may be needed to perfect the features*
 
 
-1.  **Generate Data:** Due to the difficulty in obtaining real-world failed-CPU data, a function was developed to generate frequency profiles mimicking normal operation and the different failure modes.
-2.  **Filter Data:** Raw frequency data is inherently noisy. Preprocessing filters were applied to remove irrelevant high-frequency noise while preserving the underlying trends and failure signatures.
-3.  **Wavelet Analysis:** The Discrete Wavelet Transform was used to decompose the filtered signal. Wavelets are excellent tools for analyzing signals with transient events (like failures) because they provide information about frequency content *localized in time*.
-4.  **Create Features:** Instead of classifying the entire time series,  a small number of numerical "features" from the wavelet decomposition were taken that specifically capture the characteristics distinguishing different failure types.
-5.  **Classify Failures:** A simple, rule-based classifier (a decision tree) was then built using thresholds on the extracted features to make the final classification.
+1.  **Generate Data:** Due to the difficulty in obtaining real-world failed-CPU data, I developed a function to generate frequency profiles mimicking normal operation and the different failure modes.
+2.  **Filter Data:** Raw frequency data is inherently noisy. I also applied preprocessing filters to remove irrelevant high-frequency noise while preserving the underlying trends and failure signatures.
+3.  **Wavelet Analysis:** I then used the Discrete Wavelet Transform to decompose the filtered signal. I chose this approach because wavelets are excellent tools for analyzing signals with transient events (like failures) because they provide information about frequency content *localized in time*.
+4.  **Create Features:** Instead of classifying the entire time series, I designed a small number of numerical "features" from the wavelet decomposition that specifically captured the characteristics distinguishing different failure types.
+5.  **Classify Failures:** Finally, I built a simple, rule-based classifier (a decision tree) using thresholds on the extracted features to make the final classification.
 
 ---
 
@@ -61,7 +61,7 @@ Let's look at examples of the simulated frequency data (sampled at 10 Hz over 60
 
 ## Step 1: Filtering the Noise
 
-As mentioned, raw CPU frequency data is noisy due to rapid dynamic adjustments and measurement effects. To focus on the failure signatures **cascaded preprocessing filters** were applied:
+As I mentioned earlier, raw CPU frequency data is noisy due to rapid dynamic adjustments and measurement effects. To focus on the failure signatures, I took advantage of **cascaded preprocessing filters**:
 
 1.  **Moving Average Filter (Window=3):** A simple filter that slightly smooths the data by averaging each point with its immediate neighbors. It reduces minor jitter.
 2.  **Butterworth Low-Pass Filter (Order=2, Cutoff=3.0 Hz):** A more advanced filter that removes frequencies above 3 Hz while preserving the slower changes associated with load variations and failure events. It has a smooth response, avoiding distortion of the frequencies we want to keep.
@@ -90,7 +90,7 @@ Why use wavelets instead of something like the Fourier Transform? While Fourier 
 
 Wavelets are different. They are small waves that are localized in both time and frequency. This allows them to act like a mathematical microscope, zooming in on specific time intervals to see what frequencies are active *right then*.
 
-The **Daubechies 4 ('db4') wavelet** was chosen for several reasons:
+I ended up choosing the **Daubechies 4 ('db4') wavelet** for many reasons:
 * **Compact Support:** It's localized in time, good for analyzing transient failure events.
 * **Vanishing Moments (2):** Helps the analysis ignore smooth sections of the signal and focus on abrupt changes or oscillations, making failure signatures stand out in the detail coefficients.
 * **Balance:** It offers a good trade-off between time and frequency localization for this type of signal.
@@ -108,7 +108,7 @@ The **Daubechies 4 ('db4') wavelet** was chosen for several reasons:
   </tr>
 </table>
 
-The filtered signal was decomposed into multiple levels using `wavedec`. The "Detail" coefficients at each level capture information within specific frequency bands. Levels 1 and 2 were looked at initially but **Detail Level 1 (D1)** was chosen to build the features, which contains the highest frequency information (approx. 2.5-5 Hz in this case, after filtering) where the sharp transients associated with failures are most prominent.
+I was then able to decompose the filtered signal into multiple levels using `wavedec`. The "Detail" coefficients at each level capture information within specific frequency bands. I looked at detail levels 1 and 2 initially but chose **Detail Level 1 (D1)** to build the features. They contain the highest frequency information (approx. 2.5-5 Hz in this case, after filtering) where the sharp transients associated with failures are most prominent.
 
 Here's how the D1 and D2 reconstructions look for some sample runs:
 
@@ -140,7 +140,7 @@ Here's how the D1 and D2 reconstructions look for some sample runs:
 
 <em> Detail Level 1 & 2 reconstructions for each failure type. Note the different signal characteristics and amplitude scales.</em>
 
-Observe how different failure types create distinct patterns in the D1 signal: 'None' has low amplitude noise, 'Thermal' and 'Stuck' have isolated large spikes, and 'Oscillation' has sustained high-frequency activity.
+We can see how different failure types create distinct patterns in the D1 signal: 'None' has low amplitude noise, 'Thermal' and 'Stuck' have isolated large spikes, and 'Oscillation' has sustained high-frequency activity.
 
 ---
 
@@ -152,7 +152,7 @@ Analyzing the entire D1 time series (600 points) for every run is still computat
 
 *Feature engineering helps bring order to complex data, moving from raw signals to concise, informative metrics through iterative refinement.*
 
-Based on observing the D1 plots and iterating through different ideas, four key features were developed.
+Based on observing the D1 plots and iterating through different ideas, I developed four final features.
 
 1.  **Significant Peak Count (`pk_count`):** Counts how many high-amplitude spikes occur in the D1 signal. *Helps identify Frequency Oscillation (many peaks).*
  <img src="./images/feature1_vis.png">
@@ -167,7 +167,7 @@ Based on observing the D1 plots and iterating through different ideas, four key 
 
 ## Step 4: Classification - Making the Decision
 
-With these features calculated for each run, a simple rule-based classifier can be built. This works like a flowchart or **decision tree**, checking the feature values against tuned thresholds in a specific order.
+With these features calculated for each run, I can finally build the classifying algorithm. This works like a flowchart or **decision tree**, checking the feature values against tuned thresholds in a specific order.
 
 <img src="./images/algorithm.png" alt="D1/D2 plot for Stuck Frequency" width="500">
 
@@ -186,7 +186,7 @@ This sequence leverages the most reliable features first (like MAD for 'None') a
 
 ## Results and Conclusion
 
-This classification logic was tested on 1000 simulated runs (250 of each type). The results were very promising:
+I tested the classification logic on 1000 simulated runs (250 of each type). The results were very promising:
 
 <img src="./images/confusion_matrix.png" width="500">
 
@@ -205,10 +205,10 @@ This classification logic was tested on 1000 simulated runs (250 of each type). 
 
 **Limitations & Future Work:**
 
-* This analysis used **simulated data**. Validation on diverse real-world CPU telemetry is needed.
-* The thresholds were **tuned manually** based on observed distributions; automated optimization (random forest) could be explored.
-* Finding a way to remove false positives is imperative to a successful product: 11 total runs demonstrate missed fail.
-* Future work could involve **predicting the *time*** of failure onset or using these features as input to more complex **machine learning models**.
+* This analysis used **simulated data**. In the future I can validate this approach using diverse, real-world CPU telemetry.
+* I tuned the thresholds manually based on observed distributions; automated optimization (random forest) could be explored to make this less tedious.
+* I need to find a way to remove false passes is imperative to a successful product: 11 total runs demonstrate missed fail that would be shipped to the customer.
+* In the future I could try and **predict the *time*** of the CPU failure, or use these features as inputs to more complex **machine learning models**.
 
 ---
 
