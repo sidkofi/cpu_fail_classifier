@@ -25,7 +25,7 @@ clear; clc; close all; % Start with a clean environment
 fprintf('--- CPU Failure Classification Script ---\n');
 try
     % Load data into table and cell array
-    [data, run_data_cell_optional] = load_benchmark_data('benchmark_data.csv');
+    [data, run_data_cell_optional] = load_benchmark_data('../data/benchmark_data.csv');
     num_total_runs = max(data.Run_ID);
     fprintf('Loaded data for %d runs.\n', num_total_runs);
 catch ME
@@ -35,7 +35,7 @@ end
 %% 2. Define Parameters
 
 % --- Preprocessing Parameters ---
-Fs = 10;            % dont change this
+Fs = 10;            % Don't change this
 ma_window = 3;      % Moving average window size
 butter_order = 2;   % Butterworth filter order
 butter_cutoff = 3.0;% Butterworth cutoff frequency (Hz)
@@ -237,15 +237,12 @@ fprintf('Overall Accuracy: %.2f%%\n', overall_accuracy * 100);
 % Confusion Matrix
 % Define the expected order of labels for consistency
 class_order = {'None', 'Frequency_Oscillation', 'Stuck_Frequency', 'Thermal_Throttling'};
-% Ensure both true and predicted labels are categorical with the same order
 true_cat = categorical(true_labels_valid, class_order);
 pred_cat = categorical(predicted_labels_valid, class_order);
 
 figure('Name', 'Confusion Matrix');
 cm = confusionchart(true_cat, pred_cat);
 cm.Title = sprintf('CPU Failure Classification (Overall Acc: %.2f%%)', overall_accuracy * 100);
-cm.ColumnSummary = 'column-normalized'; % Show precision
-cm.RowSummary = 'row-normalized';     % Show recall
 
 
 fprintf('\n--- Classification Report Complete ---\n');

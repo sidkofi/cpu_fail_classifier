@@ -24,10 +24,10 @@
 % Output:
 %   - Saves multiple PNG files corresponding to the figures needed for the
 %     blog post into the 'images' subdirectory (relative to current folder).
-%     Ensure the 'images' folder exists before running.
+%     Ensure the 'generated_images' folder exists before running.
 
 % --- Create Output Directory ---
-output_dir = 'images';
+output_dir = 'generated_images';
 if ~exist(output_dir, 'dir')
    mkdir(output_dir);
    fprintf('Created output directory: %s\n', output_dir);
