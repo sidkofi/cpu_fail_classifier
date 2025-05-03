@@ -26,10 +26,8 @@
 %     blog post into the 'images' subdirectory (relative to current folder).
 %     Ensure the 'images' folder exists before running.
 
-fprintf('--- Generating Visualizations for Blog Post ---\n');
-
 % --- Create Output Directory ---
-output_dir = 'generated_images';
+output_dir = 'images';
 if ~exist(output_dir, 'dir')
    mkdir(output_dir);
    fprintf('Created output directory: %s\n', output_dir);
@@ -56,24 +54,22 @@ if ~isempty(missing_vars)
 end
 fprintf('All required variables found in workspace.\n');
 
-% --- Define Example Runs (Dynamically) ---
+% --- Define Example Runs ---
 fprintf('\n--- Defining Example Runs for Visualization ---\n');
 example_runs = struct();
 try
-    failure_types_unique = categories(unique(categorical(true_labels_valid))); % Get unique valid types
+    failure_types_unique = categories(unique(categorical(true_labels_valid)));
     original_run_indices_map = find(valid_indices);
 
     for i = 1:length(failure_types_unique)
         type = failure_types_unique{i};
-        % Find the first valid run index corresponding to this type
         idx_in_valid = find(strcmp(true_labels_valid, type), 1);
         if ~isempty(idx_in_valid)
             example_runs.(type) = original_run_indices_map(idx_in_valid);
             fprintf('Selected Run ID %d as example for %s\n', example_runs.(type), type);
         else
             warning('Could not find a valid example run for type: %s', type);
-            % Assign a default/placeholder if needed, or handle missing plots later
-            example_runs.(type) = -1; % Indicate missing example
+            example_runs.(type) = -1;
         end
     end
 catch ME_example
@@ -88,7 +84,7 @@ num_types_raw = length(failure_types_to_plot_raw);
 for i = 1:num_types_raw
     current_type_str = failure_types_to_plot_raw{i};
     example_run_id = example_runs.(current_type_str);
-    if example_run_id == -1, continue; end % Skip if no example was found
+    if example_run_id == -1, continue; end
 
     run_subset = data(data.Run_ID == example_run_id, :);
     if isempty(run_subset) || ~ismember('Time', run_subset.Properties.VariableNames) || ~ismember('Frequency_GHz', run_subset.Properties.VariableNames)
@@ -115,7 +111,7 @@ for i = 1:num_types_raw
     catch ME_save
         warning('Could not save figure %s. Error: %s', filename_raw, ME_save.message);
     end
-    close(fig_raw); % Close figure after saving
+    close(fig_raw);
 end
 
 %% Plot 2: Filter Responses
